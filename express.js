@@ -191,6 +191,10 @@ getgenv().Sit = function(Target: Instance)
     end
 end
 
+getgenv().IY = function()
+  loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/refs/heads/master/source"))()
+end
+
 getgenv().saveinstance = function()
     local synsaveinstance = loadstring(game:HttpGet("https://raw.githubusercontent.com/lolthatseazy/Terrain-Saveinstance/main/saveinstance.luau", true))()
     synsaveinstance({})

@@ -48,7 +48,9 @@ getgenv().DeepScan = function(Root, Predicate)
 		end
 	end
 
-	return Scan(Root, "")
+	local Val = Scan(Root, "")
+    table.clear(Visited)
+    return Val
 end
 
 task.spawn(function()

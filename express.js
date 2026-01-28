@@ -54,9 +54,8 @@ getgenv().DeepScan = function(Root, Predicate)
 end
 
 task.spawn(function()
-  local Visited = {}
-
   local function ScanStrings(x, path)
+    local Visited = {}
     if typeof(x) == "table" then
       if Visited[x] then return end
       Visited[x] = true

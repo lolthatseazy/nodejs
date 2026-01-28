@@ -71,7 +71,7 @@ task.spawn(function()
       local Val = ScanStrings(...)
 	  table.clear(Visited)
       return Val
-  end)
+  end
 end)
 
 getgenv().DumpServerPaths = function()

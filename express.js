@@ -16,6 +16,7 @@ getgenv().HumanoidRootPart = getgenv().Character:FindFirstChild("HumanoidRootPar
 LocalPlayer.CharacterAdded:Connect(function(Char)
     getgenv().Character = Char
     getgenv().Humanoid = Char:WaitForChild("Humanoid")
+    getgenv().HumanoidRootPart = getgenv().Character:WaitForChild("HumanoidRootPart", 9e9)
 end)
 
 getgenv().JoinJobId = function(JobId)

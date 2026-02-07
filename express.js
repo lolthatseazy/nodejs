@@ -55,24 +55,40 @@ getgenv().DeepScan = function(Root, Predicate)
 end
 
 task.spawn(function()
-  local Visited = {}
-  local function ScanStrings(x, path)
-    if typeof(x) == "table" then
-      if Visited[x] then return end
-      Visited[x] = true
-      for k, v in pairs(x) do
-        ScanStrings(v, path .. "[" .. tostring(k) .. "]")
-      end
-    elseif typeof(x) == "string" then
-      warn(x, path)
+    local Visited = {}
+    
+    local function IsLPHTable(Table)
+        for Index = 45, 190 do
+            if rawget(Table, Index) ~= string.char(Index) then
+                return false
+            end
+        end
+        
+        return true
     end
-  end
+    
+    local function ScanStrings_Internal(x, path)
+        path = path or ""
+        
+        if type(x) == "table" then
+            if Visited[x] then return end
+            Visited[x] = true
+            
+            if not IsLPHTable(x) then
+                for Key, Value in pairs(x) do
+                    ScanStrings_Internal(Value, path.."[".. tostring(Key) .."]")
+                end
+            end
+        elseif type(x) == "string" then
+            warn(x, path)
+        end
+    end
 
-  getgenv().ScanStrings = function(...)
-      local Val = ScanStrings(...)
-	  table.clear(Visited)
-      return Val
-  end
+    getgenv().ScanStrings = function(...)
+        local Val = ScanStrings_Internal(...)
+        table.clear(Visited)
+        return Val
+    end
 end)
 
 getgenv().DumpServerPaths = function()

@@ -80,7 +80,7 @@ task.spawn(function()
                 end
             end
         elseif type(x) == "string" then
-            warn(x, path)
+            print(x, path) -- holy annoying chain bro
         end
     end
 

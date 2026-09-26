@@ -1,223 +1,289 @@
-while not game:GetService("Players").LocalPlayer do task.wait() end
+while not game:GetService("Players").LocalPlayer do
+    task.wait()
+end
 
-getgenv().Players = game:GetService("Players")
+local ExecutorENV = getgenv()
 
-getgenv().LocalPlayer = Players.LocalPlayer
-getgenv().Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+ExecutorENV.Players = cloneref(game:GetService("Players"))
+
+ExecutorENV.LocalPlayer = Players.LocalPlayer
+ExecutorENV.Character = LocalPlayer.Character
 
 task.spawn(function()
-    getgenv().Humanoid = getgenv().Character:WaitForChild("Humanoid", 9e9)
-    getgenv().HumanoidRootPart = getgenv().Character:WaitForChild("HumanoidRootPart", 9e9)
+    if not ExecutorENV.Character then
+        ExecutorENV.Character = LocalPlayer.CharacterAdded:Wait()
+    end
+
+    ExecutorENV.Humanoid = ExecutorENV.Character:WaitForChild("Humanoid", 9e9)
+    ExecutorENV.HumanoidRootPart = ExecutorENV.Character:WaitForChild("HumanoidRootPart", 9e9)
 end)
 
-getgenv().ReplicatedStorage = cloneref(game:GetService("ReplicatedStorage"))
-getgenv().HumanoidRootPart = getgenv().Character:FindFirstChild("HumanoidRootPart")
+ExecutorENV.MarketplaceService = cloneref(game:GetService("MarketplaceService"))
+ExecutorENV.ReplicatedStorage = cloneref(game:GetService("ReplicatedStorage"))
+ExecutorENV.TeleportService = cloneref(game:GetService("TeleportService"))
+ExecutorENV.ReplicatedFirst = cloneref(game:GetService("ReplicatedFirst"))
+ExecutorENV.ScriptContext = cloneref(game:GetService("ScriptContext"))
+ExecutorENV.GuiService = cloneref(game:GetService("GuiService"))
+ExecutorENV.StarterGui = cloneref(game:GetService("StarterGui"))
+ExecutorENV.CoreGui = cloneref(game:GetService("CoreGui"))
 
-LocalPlayer.CharacterAdded:Connect(function(Char)
-    getgenv().Character = Char
-    getgenv().Humanoid = Char:WaitForChild("Humanoid")
-    getgenv().HumanoidRootPart = getgenv().Character:WaitForChild("HumanoidRootPart", 9e9)
+LocalPlayer.CharacterAdded:Connect(function(Character)
+    ExecutorENV.Character = Character
+    ExecutorENV.Humanoid = Character:WaitForChild("Humanoid")
+    ExecutorENV.HumanoidRootPart = Character:WaitForChild("HumanoidRootPart", 9e9)
 end)
 
-getgenv().JoinJobId = function(JobId)
-    game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, JobId)
+ExecutorENV.ClearError = function(Kick)
+    if Kick then
+        LocalPlayer:Kick()
+    end
+
+    GuiService:ClearError()
 end
 
-getgenv().Rejoin = function()
-    game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, game.JobId)
+ExecutorENV.JoinJobId = function(JobId)
+    TeleportService:TeleportToPlaceInstance(game.PlaceId, JobId)
 end
 
-getgenv().DeepScan = function(Root, Predicate)
-	local Visited = {}
+ExecutorENV.IsFromPath = function(Func, Path)
+    if not Func then
+        return
+    end
+    Path = Path or "ReplicatedFirst.LocalScript"
 
-	local function Scan(Value, Path)
-		if typeof(Value) == "table" then
-			if Visited[Value] then
-				return
-			end
+    return debug.info(Func, "s"):find(Path, 1, true) and true or false
+end
 
-			Visited[Value] = true
+ExecutorENV.Rejoin = function()
+    TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId)
+end
 
-			for K, V in pairs(Value) do
-				local Result = Scan(V, Path .. "[" .. tostring(K) .. "]")
-				if Result then
-					return Result
-				end
-			end
-		elseif typeof(Value) == "string" then
-			return Predicate(Value, Path)
-		end
-	end
+ExecutorENV.DeepScan = function(Root, Predicate)
+    local Visited = {}
 
-	local Val = Scan(Root, "")
+    local function Scan(Value, Path)
+        if typeof(Value) == "table" then
+            if Visited[Value] then
+                return
+            end
+
+            Visited[Value] = true
+
+            for Key, Value in pairs(Value) do
+                local Result = Scan(Value, Path .. "[" .. tostring(Key) .. "]")
+
+                if Result then
+                    return Result
+                end
+            end
+        elseif typeof(Value) == "string" then
+            return Predicate(Value, Path)
+        end
+    end
+
+    local Value = Scan(Root, "")
+
     table.clear(Visited)
-    return Val
+
+    return Value
 end
 
 task.spawn(function()
     local Visited = {}
-    
+
     local function IsLPHTable(Table)
         for Index = 45, 190 do
             if rawget(Table, Index) ~= string.char(Index) then
                 return false
             end
         end
-        
+
         return true
     end
-    
-    local function ScanStrings_Internal(x, path)
-        path = path or ""
-        
-        if type(x) == "table" then
-            if Visited[x] then return end
-            Visited[x] = true
-            
-            if not IsLPHTable(x) then
-                for Key, Value in pairs(x) do
-                    ScanStrings_Internal(Value, path.."[".. tostring(Key) .."]")
+
+    local function ScanStringsInternal(Value, Path)
+        Path = Path or ""
+
+        if type(Value) == "table" then
+            if Visited[Value] then
+                return
+            end
+
+            Visited[Value] = true
+
+            if not IsLPHTable(Value) then
+                for Key, ChildValue in pairs(Value) do
+                    ScanStringsInternal(ChildValue, Path .. "[" .. tostring(Key) .. "]")
                 end
             end
-        elseif type(x) == "string" then
-            print(x, path) -- holy annoying chain bro
+        elseif type(Value) == "string" then
+            print(Value, Path)
         end
     end
 
-    getgenv().ScanStrings = function(...)
-        local Val = ScanStrings_Internal(...)
+    ExecutorENV.ScanStrings = function(...)
+        local Value = ScanStringsInternal(...)
+
         table.clear(Visited)
-        return Val
+
+        return Value
     end
 end)
 
-getgenv().DumpServerPaths = function()
-    local MarketplaceService = game:GetService("MarketplaceService")
-    local Players = game:GetService("Players")
-    local StarterGui = game:GetService("StarterGui")
+ExecutorENV.DumpServerPaths = function()
     local Success, ProductInfo = pcall(function()
-       return MarketplaceService:GetProductInfo(game.PlaceId)
+        return MarketplaceService:GetProductInfo(game.PlaceId)
     end)
+
     local GameName = (Success and ProductInfo and ProductInfo.Name or "UnknownGame"):gsub("[%c%p%s]", "")
     local FileName = GameName .. "-ServerPaths.txt"
+
     writefile(FileName, "")
 
     local AttemptArgs = {
-      {Desc = "Players", Args = {Players}},
-      {Desc = "{}", Args = {{}}},
-      {Desc = "1", Args = {1}},
-      {Desc = "no args", Args = {}},
+        {
+            Desc = "Players",
+            Args = {Players}
+        },
+        {
+            Desc = "{}",
+            Args = {{}}
+        },
+        {
+            Desc = "1",
+            Args = {1}
+        },
+        {
+            Desc = "no args",
+            Args = {}
+        }
     }
 
-    local function ExtractErrorFields(err)
-      local fields = {}
-      for field in string.gmatch(err, "'([^']+)'") do
-        fields[field] = true
-      end
-      local list = {}
-      for k in pairs(fields) do
-        table.insert(list, k)
-      end
-      return list
+    local function ExtractErrorFields(Error)
+        local Fields = {}
+
+        for Field in string.gmatch(Error, "'([^']+)'") do
+            Fields[Field] = true
+        end
+
+        local List = {}
+
+        for Key in pairs(Fields) do
+            table.insert(List, Key)
+        end
+
+        return List
     end
 
-    local tasks = {}
+    local Tasks = {}
 
     for _, Remote in ipairs(game:GetDescendants()) do
-      if Remote:IsA("RemoteFunction") then
-        local t = task.spawn(function()
-          for _, Attempt in ipairs(AttemptArgs) do
-            local Success, Err = pcall(function()
-              return Remote:InvokeServer(unpack(Attempt.Args))
+        if Remote:IsA("RemoteFunction") then
+            local Thread = task.spawn(function()
+                for _, Attempt in ipairs(AttemptArgs) do
+                    local Success, Error = pcall(function()
+                        return Remote:InvokeServer(table.unpack(Attempt.Args))
+                    end)
+
+                    if not Success and Error and Error:find("Server") then
+                        local Fields = ExtractErrorFields(Error)
+                        local FieldString = #Fields > 0 and "(" .. table.concat(Fields, ", ") .. ")" or ""
+
+                        local LogEntry = ("[%s]\n%s\n%s\n\n"):format(
+                            Remote:GetFullName(),
+                            FieldString,
+                            Error
+                        )
+
+                        appendfile(FileName, LogEntry)
+                        warn("Logged:", Remote:GetFullName())
+                    end
+                end
             end)
-            if not Success and Err and Err:find("Server") then
-              local fields = ExtractErrorFields(Err)
-              local fieldStr = #fields > 0 and "(" .. table.concat(fields, ", ") .. ")" or ""
-              local logEntry = ("[%s]\n%s\n%s\n\n"):format(
-                Remote:GetFullName(),
-                fieldStr,
-                Err
-              )
-              appendfile(FileName, logEntry)
-              warn("Logged:", Remote:GetFullName())
-            end
-          end
-        end)
-        table.insert(tasks, t)
-      end
+
+            table.insert(Tasks, Thread)
+        end
     end
 
-    for _, t in ipairs(tasks) do
-        task.wait(0)
-        while coroutine.status(t) ~= "dead" do
-          task.wait()
+    for _, Thread in ipairs(Tasks) do
+        task.wait()
+
+        while coroutine.status(Thread) ~= "dead" do
+            task.wait()
         end
     end
 
     StarterGui:SetCore("SendNotification", {
-      Title = "Server Path Dumper",
-      Text = "Done",
-      Duration = 5,
+        Title = "Server Path Dumper",
+        Text = "Done",
+        Duration = 5
     })
 end
 
-getgenv().ReplicatedFirst = cloneref(game:GetService("ReplicatedFirst"))
-
 if not gethui or not gethui() then
-    local CoreGui = cloneref(game:GetService("CoreGui"))
     local SafeUI = cloneref(CoreGui:WaitForChild("RobloxGui", 9e9))
 
     local GetHUI = newcclosure(function()
         return SafeUI
     end, "gethui")
 
-    getgenv().get_hidden_gui = GetHUI
-    getgenv().gethui = GetHUI
+    ExecutorENV.GetHiddenGui = GetHUI
+    ExecutorENV.GetHUI = GetHUI
 end
 
-getgenv().BAdonis = function()
-	  loadstring(game:HttpGet("https://raw.githubusercontent.com/Pixeluted/adoniscries/refs/heads/main/Source.lua"))()
+if not getdeletedactors and not get_deleted_actors and getactorstates then
+    local GetDeletedActors = function()
+        local ActorStates = assert(getactorstates(), "No active actor state")
+        
+        local DeletedActors = {}
+
+        for _, A in ipairs(ActorStates) do
+            local Actors = A:GetActors()
+            
+            for _,v in pairs(Actors) do
+                if not v:IsDescendantOf(game) then
+                    table.insert(DeletedActors, v)
+                end
+            end
+        end
+
+        return DeletedActors
+    end
+
+    for _,v in ipairs({"getdeletedactors", "get_deleted_actors"}) do 
+        ExecutorENV[v] = GetDeletedActors
+    end
 end
 
-getgenv().Check = function(Str: String, ReturnFullPath: Boolean?)
+ExecutorENV.CloneAsTable = function(Instance)
+    return table.clone(getproperties(Instance))
+end
+
+ExecutorENV.BAdonis = function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/Pixeluted/adoniscries/refs/heads/main/Source.lua"))()
+end
+
+ExecutorENV.Check = function(String: String, ReturnFullPath: Boolean?)
     for _, Instance in pairs(game:GetDescendants()) do
-        if string.find(Instance:GetFullName():lower(), Str:lower()) then
+        if string.find(Instance:GetFullName():lower(), String:lower()) then
             return ReturnFullPath and Instance:GetFullName() or true
         end
     end
+
     return false
 end
 
-getgenv().Hook = function(Target: Instance, Method: string, Callback: ((...any) -> any)?)
-    local original
-    original = hookmetamethod(game, "__namecall", function(self, ...)
-        local name = getnamecallmethod()
-        if rawequal(self, Target) and name == Method then
-            warn("hooked", name, ...)
-            if Callback then
-                return Callback(self, ...)
-            else
-                return task.wait(9e9)
-            end
-        end
-        return original(self, ...)
-    end)
-    return original
-end
-
-getgenv().Sit = function(Target: Instance)
+ExecutorENV.Sit = function(Target: Instance)
     if LocalPlayer and Character then
-        if typeof(Target) == "Seat" then
-            Target:Sit(getgenv().Humanoid)
+        if Target:IsA("Seat") or Target:IsA("VehicleSeat") then
+            if pcall(replicatesignal, Target.RemoteCreateSeatWeld, Humanoid) then
+                return
+            end
+            Target:Sit(ExecutorENV.Humanoid)
         end
     end
 end
 
-getgenv().IY = function()
-  loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/refs/heads/master/source"))()
-end
-
-getgenv().saveinstance = function()
-    local synsaveinstance = loadstring(game:HttpGet("https://raw.githubusercontent.com/lolthatseazy/Terrain-Saveinstance/main/saveinstance.luau", true))()
-    synsaveinstance({})
+ExecutorENV.IY = function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/refs/heads/master/source"))()
 end
